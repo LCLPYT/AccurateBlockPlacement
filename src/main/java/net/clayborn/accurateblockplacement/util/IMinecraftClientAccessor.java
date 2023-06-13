@@ -1,4 +1,4 @@
-package net.clayborn.accurateblockplacement;
+package net.clayborn.accurateblockplacement.util;
 
 public interface IMinecraftClientAccessor {
 

@@ -1,5 +1,8 @@
-# Accurate Block Placement
+# Ace Placer
 
-A simple fabric mod for minecraft which causes players to place a blocks based on what they are looking at rather than a timer.
+A simple fabric mod for Minecraft that grants the ability to place blocks ***blazingly fast***.
+Block placement will be similar to Bedrock creative mode, so that builders can quickly place a lot of blocks.
 
-See https://minecraft.curseforge.com/projects/accurate-block-placement for releases.
+This is a fork of [AccurateBlockPlacement](https://github.com/orbwoi/AccurateBlockPlacement), which is inspired by [BetterPlacement](https://legacy.curseforge.com/minecraft/mc-mods/better-placement).
+I created the fork to support Minecraft 1.20.1 and onwards. 
+As a bonus, I also refactored some portions of the code to make it more readable and easier to modify.

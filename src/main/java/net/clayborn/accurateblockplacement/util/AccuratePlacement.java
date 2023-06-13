@@ -1,7 +1,6 @@
 package net.clayborn.accurateblockplacement.util;
 
 import net.clayborn.accurateblockplacement.AccurateBlockPlacementMod;
-import net.clayborn.accurateblockplacement.IMinecraftClientAccessor;
 import net.clayborn.accurateblockplacement.mixin.KeyBindingAccessor;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;

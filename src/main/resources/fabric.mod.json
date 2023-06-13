@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "accurateblockplacement",
+  "id": "aceplacer",
   "version": "${version}",
-
-  "name": "Accurate Block Placement",
-  "description": "Build at super speed with your bare hands!",
+  "name": "Ace Placer",
+  "description": "Place blocks blazingly fast!",
   "authors": [
     "Clayborn",
     "Flourick"
@@ -14,30 +13,31 @@
     "LCLP"
   ],
   "contact": {
-    "homepage": "https://minecraft.curseforge.com/projects/accurate-block-placement",
-    "sources": "https://github.com/orbwoi/AccurateBlockPlacement"
+    "homepage": "https://github.com/LCLPYT/AccurateBlockPlacement",
+    "sources": "https://github.com/LCLPYT/AccurateBlockPlacement",
+    "issues": "https://github.com/LCLPYT/AccurateBlockPlacement/issues"
   },
-
   "license": "MIT",
   "icon": "assets/accurateblockplacement/icon.png",
-
   "environment": "client",
   "entrypoints": {
-    "main": [
+    "client": [
       "net.clayborn.accurateblockplacement.AccurateBlockPlacementMod"
     ]
   },
   "mixins": [
   	{
-	  	"environment": "client",
-	    "config": "accurateblockplacement.mixins.json"
+      "environment": "client",
+	  "config": "aceplacer.mixins.json"
     }
   ],
-
   "depends": {
     "minecraft": "~1.20",
     "fabricloader": ">=0.14.21",
     "fabric": "*",
     "java": ">=17"
+  },
+  "conflicts": {
+    "accurateblockplacement": "*"
   }
 }

@@ -1,7 +1,7 @@
 package net.clayborn.accurateblockplacement.mixin;
 
 import net.clayborn.accurateblockplacement.AccurateBlockPlacementMod;
-import net.clayborn.accurateblockplacement.IMinecraftClientAccessor;
+import net.clayborn.accurateblockplacement.util.IMinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
