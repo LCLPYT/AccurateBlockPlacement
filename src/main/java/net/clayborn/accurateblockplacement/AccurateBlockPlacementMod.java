@@ -14,8 +14,6 @@ public class AccurateBlockPlacementMod implements ModInitializer {
 	public static Boolean  disableNormalItemUse = false;
 	public static boolean  isAccurateBlockPlacementEnabled = true;
 
-	final static String KEY_CATEGORY_NAME = "Accurate Block Placement";
-	
 	@Override
 	public void onInitialize() {
 		KeyBinding keybind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
