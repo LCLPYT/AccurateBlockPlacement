@@ -7,8 +7,6 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import org.lwjgl.glfw.GLFW;
 
 public class AccurateBlockPlacementMod implements ModInitializer {
 
@@ -16,45 +14,32 @@ public class AccurateBlockPlacementMod implements ModInitializer {
 	public static Boolean  disableNormalItemUse = false;
 	public static boolean  isAccurateBlockPlacementEnabled = true;
 
-	private static KeyBinding keyBinding;
-
-	private static boolean wasAccurateBlockPlacementToggleKeyPressed = false;
-	
 	final static String KEY_CATEGORY_NAME = "Accurate Block Placement";
 	
 	@Override
 	public void onInitialize() {
-
-		keyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-			    "key.accurateblockplacement.togglevanillaplacement",
-			    InputUtil.Type.KEYSYM,
-			    GLFW.GLFW_KEY_UNKNOWN,
-			    KEY_CATEGORY_NAME
+		KeyBinding keybind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+				"net.clayborn.accurateblockplacement.togglevanillaplacement",
+				InputUtil.Type.KEYSYM,
+				-1,
+				"Accurate Block Placement"
 		));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			if (client == null || client.inGameHud == null) return;
+			while (keybind.wasPressed()) {
+				isAccurateBlockPlacementEnabled = !isAccurateBlockPlacementEnabled;
 
-			if (keyBinding.isPressed()) {
-				if (!wasAccurateBlockPlacementToggleKeyPressed) {
-					isAccurateBlockPlacementEnabled = !isAccurateBlockPlacementEnabled;
+				final MutableText message;
 
-					MutableText message;
-
-					if (isAccurateBlockPlacementEnabled) {
-						message = Text.translatable("net.clayborn.accurateblockplacement.modplacementmodemessage");
-					} else {
-						message = Text.translatable("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
-					}
-
-					message.formatted(Formatting.DARK_AQUA);
-
-					client.inGameHud.getChatHud().addMessage(message);
+				if (isAccurateBlockPlacementEnabled) {
+					message = Text.translatable("net.clayborn.accurateblockplacement.modplacementmodemessage");
+				} else {
+					message = Text.translatable("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
 				}
-				wasAccurateBlockPlacementToggleKeyPressed = true;
-			} else {
-				wasAccurateBlockPlacementToggleKeyPressed = false;
+
+				client.inGameHud.getChatHud().addMessage(message);
 			}
+
 		});
 	}
 }
