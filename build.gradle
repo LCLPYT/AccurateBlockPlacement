@@ -2,13 +2,16 @@ plugins {
 	id 'java'
 	id 'fabric-loom' version '1.2-SNAPSHOT'
 	id 'maven-publish'
+	id 'gradle-build-utils' version '1.4.0'
 }
+
+Properties props = buildUtils.loadProperties('publish.properties')
 
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
-version = project.mod_version
+version = buildUtils.gitVersion()
 group = project.maven_group
 
 dependencies {
@@ -23,15 +26,16 @@ processResources {
 	inputs.property "version", project.version
 
 	filesMatching("fabric.mod.json") {
-		it.expand "version": project.version
+		expand "version": project.version
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.encoding = "UTF-8"
+	it.options.release.convention(17)
 }
 
 java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 	withSourcesJar()
 }
 
@@ -41,19 +45,58 @@ java {
 	}
 }
 
-// configure the maven publication
+import work.lclpnet.build.task.GithubDeploymentTask
+
+def env = System.getenv()
+tasks.register("github", GithubDeploymentTask) {
+	dependsOn tasks.remapJar
+
+	config {
+		token = env.get("GITHUB_TOKEN")
+		repository = env.get("GITHUB_REPOSITORY")
+	}
+
+	release {
+		title = "[$project.minecraft_version] Ace Placer $project.version"
+		tag = buildUtils.latestTag()
+	}
+
+	assets.add(tasks.remapJar.archiveFile.get())
+}
+
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
-			artifactId = project.archivesBaseName
+			artifactId = project.archives_base_name
+
 			artifact remapJar
 			artifact remapSourcesJar
+
+			pom {
+				name = 'Ace Placer'
+				description = 'A simple fabric mod for Minecraft that grants the ability to place blocks blazingly fast'
+			}
 		}
 	}
 
-	// select the repositories you want to publish to
 	repositories {
-		// uncomment to publish to the local maven
-		// mavenLocal()
+		maven {
+			if (Arrays.stream("DEPLOY_URL", "DEPLOY_USER", "DEPLOY_PASSWORD").allMatch(env.&containsKey)) {
+				credentials {
+					username env.get("DEPLOY_USER")
+					password env.get("DEPLOY_PASSWORD")
+				}
+				url env.get("DEPLOY_URL")
+			}
+			else if (Arrays.stream("mavenHost", "mavenUser", "mavenPassword").allMatch(props.&containsKey)) {
+				credentials {
+					username props.getProperty('mavenUser')
+					password props.getProperty('mavenPassword')
+				}
+				url props.getProperty('mavenHost')
+			} else {
+				url "file:///${project.projectDir}/repo"
+			}
+		}
 	}
 }
