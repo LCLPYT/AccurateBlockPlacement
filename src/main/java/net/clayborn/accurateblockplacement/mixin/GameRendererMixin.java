@@ -11,14 +11,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public abstract class GameRendererMixin {
 
-	@Unique
-	private final AccuratePlacement accuratePlacement = new AccuratePlacement();
+    @Unique
+    private final AccuratePlacement accuratePlacement = new AccuratePlacement();
 
-	@Inject(
-			method = {"updateTargetedEntity"},
-			at = {@At("RETURN")}
-	)
-	private void onUpdateTargetedEntityComplete(CallbackInfo info) {
-		accuratePlacement.update();
-	}
+    @Inject(
+            method = "updateTargetedEntity",
+            at = @At("RETURN")
+    )
+    private void onUpdateTargetedEntityComplete(CallbackInfo info) {
+        accuratePlacement.update();
+    }
 }

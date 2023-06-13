@@ -29,14 +29,81 @@ public class AccuratePlacement {
     private static final String blockActivateMethodName;
     private static final Logger logger = LoggerFactory.getLogger(AccuratePlacement.class);
 
+    static {
+        Method[] methods = Item.class.getMethods();
+
+        String targetMethod = null;
+
+        for (Method method : methods) {
+            Class<?>[] types = method.getParameterTypes();
+            if (types.length == 3 && types[0] == World.class && types[1] == PlayerEntity.class && types[2] == Hand.class) {
+                targetMethod = method.getName();
+                break;
+            }
+        }
+
+        itemUseMethodName = targetMethod;
+
+        if (itemUseMethodName == null) {
+            logger.error("Could not find item use method");
+        }
+
+        // now check for block activation methods
+        methods = Block.class.getMethods();
+        targetMethod = null;
+
+        for (Method method : methods) {
+            Class<?>[] types = method.getParameterTypes();
+
+            if (types.length == 6 && types[0] == BlockState.class && types[1] == World.class
+                    && types[2] == BlockPos.class && types[3] == PlayerEntity.class
+                    && types[4] == Hand.class && types[5] == BlockHitResult.class) {
+                targetMethod = method.getName();
+                break;
+            }
+        }
+
+        blockActivateMethodName = targetMethod;
+
+        if (blockActivateMethodName == null) {
+            logger.error("Could not find block activate method");
+        }
+    }
+
+    private final ArrayList<HitResult> backFillList = new ArrayList<>();
     private BlockPos lastSeenBlockPos = null;
     private BlockPos lastPlacedBlockPos = null;
     private Vec3d lastPlayerPlacedBlockPos = null;
     private Boolean autoRepeatWaitingOnCooldown = true;
     private Vec3d lastFreshPressMouseRatio = null;
-    private final ArrayList<HitResult> backFillList = new ArrayList<>();
     private Item lastItemInUse = null;
     private Hand handOfCurrentItemInUse;
+
+    private static boolean doesItemHaveOverriddenUseMethod(Item item) {
+        if (itemUseMethodName == null) return false;
+
+        // TODO cache
+
+        try {
+            return !item.getClass().getMethod(itemUseMethodName, World.class, PlayerEntity.class, Hand.class).getDeclaringClass().equals(Item.class);
+        } catch (Exception e) {
+            logger.error("Unable to find item {} use method!", item.getClass().getName(), e);
+            return false;
+        }
+    }
+
+    private static Boolean isBlockActivatable(Block block) {
+        if (blockActivateMethodName == null) return false;
+
+        // TODO cache
+
+        try {
+            return !block.getClass().getMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, Hand.class, BlockHitResult.class).getDeclaringClass().equals(AbstractBlock.class);
+        } catch (Exception e) {
+            logger.error("Unable to find block {} activate method!", block.getClass().getName(), e);
+            return false;
+        }
+    }
 
     public void update() {
         if (!AccurateBlockPlacementMod.isAccurateBlockPlacementEnabled) {
@@ -150,41 +217,41 @@ public class AccuratePlacement {
             if (isPlacementTargetFresh) {
                 this.backFillList.add(client.crosshairTarget);
             }
-        } else {
-            if (this.autoRepeatWaitingOnCooldown && !freshKeyPress) {
-                this.autoRepeatWaitingOnCooldown = false;
-                HitResult currentHitResult = client.crosshairTarget;
 
-                for (HitResult prevHitResult : this.backFillList) {
-                    client.crosshairTarget = prevHitResult;
-                    clientAccessor.accurateblockplacement_DoItemUseBypassDisable();
-                }
+            this.lastSeenBlockPos = blockHitResult.getBlockPos();
+            return;
+        }
 
-                this.backFillList.clear();
-                client.crosshairTarget = currentHitResult;
+        if (this.autoRepeatWaitingOnCooldown && !freshKeyPress) {
+            this.autoRepeatWaitingOnCooldown = false;
+            HitResult currentHitResult = client.crosshairTarget;
+
+            for (HitResult prevHitResult : this.backFillList) {
+                client.crosshairTarget = prevHitResult;
+                clientAccessor.accurateblockplacement_DoItemUseBypassDisable();
             }
 
-            for (boolean runOnceFlag = !freshKeyPress; runOnceFlag || client.options.useKey.wasPressed(); runOnceFlag = false) {
-                clientAccessor.accurateblockplacement_DoItemUseBypassDisable();
+            this.backFillList.clear();
+            client.crosshairTarget = currentHitResult;
+        }
 
-                if (!oldBlock.equals(world.getBlockState(targetPlacement.getBlockPos()).getBlock())) {
-                    this.lastPlacedBlockPos = targetPlacement.getBlockPos();
+        for (boolean runOnceFlag = !freshKeyPress; runOnceFlag || client.options.useKey.wasPressed(); runOnceFlag = false) {
+            clientAccessor.accurateblockplacement_DoItemUseBypassDisable();
 
-                    if (this.lastPlayerPlacedBlockPos == null) {
-                        this.lastPlayerPlacedBlockPos = player.getPos();
-                    } else {
-                        Vec3d pos = Vec3d.of(targetPlacement.getSide().getVector());
-                        Vec3d summedLastPlayerPos = this.lastPlayerPlacedBlockPos.add(pos);
+            if (!oldBlock.equals(world.getBlockState(targetPlacement.getBlockPos()).getBlock())) {
+                this.lastPlacedBlockPos = targetPlacement.getBlockPos();
 
-                        this.lastPlayerPlacedBlockPos = switch (targetPlacement.getSide().getAxis()) {
-                            case X ->
-                                    new Vec3d(summedLastPlayerPos.x, player.getPos().y, player.getPos().z);
-                            case Y ->
-                                    new Vec3d(player.getPos().x, summedLastPlayerPos.y, player.getPos().z);
-                            case Z ->
-                                    new Vec3d(player.getPos().x, player.getPos().y, summedLastPlayerPos.z);
-                        };
-                    }
+                if (this.lastPlayerPlacedBlockPos == null) {
+                    this.lastPlayerPlacedBlockPos = player.getPos();
+                } else {
+                    Vec3d pos = Vec3d.of(targetPlacement.getSide().getVector());
+                    Vec3d summedLastPlayerPos = this.lastPlayerPlacedBlockPos.add(pos);
+
+                    this.lastPlayerPlacedBlockPos = switch (targetPlacement.getSide().getAxis()) {
+                        case X -> new Vec3d(summedLastPlayerPos.x, player.getPos().y, player.getPos().z);
+                        case Y -> new Vec3d(player.getPos().x, summedLastPlayerPos.y, player.getPos().z);
+                        case Z -> new Vec3d(player.getPos().x, player.getPos().y, summedLastPlayerPos.z);
+                    };
                 }
             }
         }
@@ -238,72 +305,5 @@ public class AccuratePlacement {
 
     private boolean isTargetingSomethingElse(MinecraftClient client) {
         return client.crosshairTarget != null && client.crosshairTarget.getType() != HitResult.Type.BLOCK;
-    }
-
-    private static boolean doesItemHaveOverriddenUseMethod(Item item) {
-        if (itemUseMethodName == null) return false;
-
-        // TODO cache
-
-        try {
-            return !item.getClass().getMethod(itemUseMethodName, World.class, PlayerEntity.class, Hand.class).getDeclaringClass().equals(Item.class);
-        } catch (Exception e) {
-            logger.error("Unable to find item {} use method!", item.getClass().getName(), e);
-            return false;
-        }
-    }
-
-    private static Boolean isBlockActivatable(Block block) {
-        if (blockActivateMethodName == null) return false;
-
-        // TODO cache
-
-        try {
-            return !block.getClass().getMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, Hand.class, BlockHitResult.class).getDeclaringClass().equals(AbstractBlock.class);
-        } catch (Exception e) {
-            logger.error("Unable to find block {} activate method!", block.getClass().getName(), e);
-            return false;
-        }
-    }
-
-    static {
-        Method[] methods = Item.class.getMethods();
-
-        String targetMethod = null;
-
-        for (Method method : methods) {
-            Class<?>[] types = method.getParameterTypes();
-            if (types.length == 3 && types[0] == World.class && types[1] == PlayerEntity.class && types[2] == Hand.class) {
-                targetMethod = method.getName();
-                break;
-            }
-        }
-
-        itemUseMethodName = targetMethod;
-
-        if (itemUseMethodName == null) {
-            logger.error("Could not find item use method");
-        }
-
-        // now check for block activation methods
-        methods = Block.class.getMethods();
-        targetMethod = null;
-
-        for (Method method : methods) {
-            Class<?>[] types = method.getParameterTypes();
-
-            if (types.length == 6 && types[0] == BlockState.class && types[1] == World.class
-                    && types[2] == BlockPos.class && types[3] == PlayerEntity.class
-                    && types[4] == Hand.class && types[5] == BlockHitResult.class) {
-                targetMethod = method.getName();
-                break;
-            }
-        }
-
-        blockActivateMethodName = targetMethod;
-
-        if (blockActivateMethodName == null) {
-            logger.error("Could not find block activate method");
-        }
     }
 }

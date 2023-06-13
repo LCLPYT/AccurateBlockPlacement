@@ -10,34 +10,32 @@ import net.minecraft.text.Text;
 
 public class AccurateBlockPlacementMod implements ModInitializer {
 
-	// global state
-	public static Boolean  disableNormalItemUse = false;
-	public static boolean  isAccurateBlockPlacementEnabled = true;
+    public static Boolean disableNormalItemUse = false;
+    public static boolean isAccurateBlockPlacementEnabled = true;
 
-	@Override
-	public void onInitialize() {
-		KeyBinding keybind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-				"net.clayborn.accurateblockplacement.togglevanillaplacement",
-				InputUtil.Type.KEYSYM,
-				-1,
-				"Accurate Block Placement"
-		));
+    @Override
+    public void onInitialize() {
+        KeyBinding keybind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "net.clayborn.accurateblockplacement.togglevanillaplacement",
+                InputUtil.Type.KEYSYM,
+                -1,
+                "Accurate Block Placement"
+        ));
 
-		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			while (keybind.wasPressed()) {
-				isAccurateBlockPlacementEnabled = !isAccurateBlockPlacementEnabled;
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (keybind.wasPressed()) {
+                isAccurateBlockPlacementEnabled = !isAccurateBlockPlacementEnabled;
 
-				final MutableText message;
+                final MutableText message;
 
-				if (isAccurateBlockPlacementEnabled) {
-					message = Text.translatable("net.clayborn.accurateblockplacement.modplacementmodemessage");
-				} else {
-					message = Text.translatable("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
-				}
+                if (isAccurateBlockPlacementEnabled) {
+                    message = Text.translatable("net.clayborn.accurateblockplacement.modplacementmodemessage");
+                } else {
+                    message = Text.translatable("net.clayborn.accurateblockplacement.vanillaplacementmodemessage");
+                }
 
-				client.inGameHud.getChatHud().addMessage(message);
-			}
-
-		});
-	}
+                client.inGameHud.getChatHud().addMessage(message);
+            }
+        });
+    }
 }
