@@ -7,6 +7,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.StairsBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
 import net.minecraft.util.Hand;
@@ -293,12 +294,12 @@ public class AccuratePlacement {
 
     public boolean isPlacementItem(Item currentItem) {
         return (currentItem instanceof BlockItem || currentItem instanceof MiningToolItem)
-                && (!currentItem.isFood() || currentItem instanceof AliasedBlockItem)
+                && (!currentItem.getComponents().contains(DataComponentTypes.FOOD) || currentItem instanceof AliasedBlockItem)
                 && !doesItemHaveOverriddenUseMethod(currentItem);
     }
 
     private boolean isInteractingWithOtherHand(PlayerEntity player, ItemStack otherHandStack) {
-        return !otherHandStack.isEmpty() && (otherHandStack.getItem().isFood()
+        return !otherHandStack.isEmpty() && (otherHandStack.contains(DataComponentTypes.FOOD)
                 || doesItemHaveOverriddenUseMethod(otherHandStack.getItem())) && player.isUsingItem();
     }
 

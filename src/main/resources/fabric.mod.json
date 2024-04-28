@@ -32,10 +32,10 @@
     }
   ],
   "depends": {
-    "minecraft": "1.20.4",
-    "fabricloader": ">=0.15.3",
+    "minecraft": "1.20.5",
+    "fabricloader": ">=0.15.10",
     "fabric": "*",
-    "java": ">=17"
+    "java": ">=21"
   },
   "conflicts": {
     "accurateblockplacement": "*"

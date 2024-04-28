@@ -15,7 +15,7 @@ public abstract class GameRendererMixin {
     private final AccuratePlacement accuratePlacement = new AccuratePlacement();
 
     @Inject(
-            method = "updateTargetedEntity",
+            method = "updateCrosshairTarget",
             at = @At("RETURN")
     )
     private void onUpdateTargetedEntityComplete(CallbackInfo info) {

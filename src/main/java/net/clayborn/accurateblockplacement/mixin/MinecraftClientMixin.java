@@ -20,7 +20,7 @@ public abstract class MinecraftClientMixin implements IMinecraftClientAccessor {
 
     @Override
     public void accurateblockplacement_DoItemUseBypassDisable() {
-        Boolean oldValue = AccurateBlockPlacementMod.disableNormalItemUse;
+        boolean oldValue = AccurateBlockPlacementMod.disableNormalItemUse;
         AccurateBlockPlacementMod.disableNormalItemUse = false;
         doItemUse();
         AccurateBlockPlacementMod.disableNormalItemUse = oldValue;
