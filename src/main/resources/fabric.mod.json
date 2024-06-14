@@ -13,9 +13,9 @@
     "LCLP"
   ],
   "contact": {
-    "homepage": "https://github.com/LCLPYT/AccurateBlockPlacement",
-    "sources": "https://github.com/LCLPYT/AccurateBlockPlacement",
-    "issues": "https://github.com/LCLPYT/AccurateBlockPlacement/issues"
+    "homepage": "https://github.com/LCLPYT/ace-placer",
+    "sources": "https://github.com/LCLPYT/ace-placer",
+    "issues": "https://github.com/LCLPYT/ace-placer/issues"
   },
   "license": "MIT",
   "icon": "assets/accurateblockplacement/icon.png",
@@ -32,8 +32,8 @@
     }
   ],
   "depends": {
-    "minecraft": "~1.20.5",
-    "fabricloader": ">=0.15.10",
+    "minecraft": ">=1.21",
+    "fabricloader": ">=0.15.11",
     "fabric": "*",
     "java": ">=21"
   },

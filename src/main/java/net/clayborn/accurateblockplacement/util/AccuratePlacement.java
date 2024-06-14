@@ -49,15 +49,15 @@ public class AccuratePlacement {
         }
 
         // now check for block activation methods
-        methods = Block.class.getMethods();
+        methods = AbstractBlock.class.getDeclaredMethods();
         targetMethod = null;
 
         for (Method method : methods) {
             Class<?>[] types = method.getParameterTypes();
 
-            if (types.length == 6 && types[0] == BlockState.class && types[1] == World.class
+            if (types.length == 5 && types[0] == BlockState.class && types[1] == World.class
                     && types[2] == BlockPos.class && types[3] == PlayerEntity.class
-                    && types[4] == Hand.class && types[5] == BlockHitResult.class) {
+                    && types[4] == BlockHitResult.class) {
                 targetMethod = method.getName();
                 break;
             }
@@ -98,7 +98,7 @@ public class AccuratePlacement {
         // TODO cache
 
         try {
-            return !block.getClass().getMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, Hand.class, BlockHitResult.class).getDeclaringClass().equals(AbstractBlock.class);
+            return !block.getClass().getMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, BlockHitResult.class).getDeclaringClass().equals(AbstractBlock.class);
         } catch (Exception e) {
             logger.error("Unable to find block {} activate method!", block.getClass().getName(), e);
             return false;
