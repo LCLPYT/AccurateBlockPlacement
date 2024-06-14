@@ -1,5 +1,8 @@
 package net.clayborn.accurateblockplacement.util;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import net.clayborn.accurateblockplacement.AccurateBlockPlacementMod;
 import net.clayborn.accurateblockplacement.mixin.KeyBindingAccessor;
 import net.minecraft.block.AbstractBlock;
@@ -17,16 +20,20 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class AccuratePlacement {
 
     private static final String itemUseMethodName;
     private static final String blockActivateMethodName;
+    private static final LoadingCache<Item, Boolean> itemCache;
+    private static final LoadingCache<Block, Boolean> blockCache;
     private static final Logger logger = LoggerFactory.getLogger(AccuratePlacement.class);
 
     static {
@@ -48,6 +55,19 @@ public class AccuratePlacement {
             logger.error("Could not find item use method");
         }
 
+        itemCache = CacheBuilder.newBuilder().maximumSize(256).build(new CacheLoader<>() {
+            @Override
+            public @NotNull Boolean load(@NotNull Item item) {
+                if (itemUseMethodName == null) return false;
+
+                try {
+                    return !item.getClass().getMethod(itemUseMethodName, World.class, PlayerEntity.class, Hand.class).getDeclaringClass().equals(Item.class);
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        });
+
         // now check for block activation methods
         methods = AbstractBlock.class.getDeclaredMethods();
         targetMethod = null;
@@ -56,8 +76,8 @@ public class AccuratePlacement {
             Class<?>[] types = method.getParameterTypes();
 
             if (types.length == 5 && types[0] == BlockState.class && types[1] == World.class
-                    && types[2] == BlockPos.class && types[3] == PlayerEntity.class
-                    && types[4] == BlockHitResult.class) {
+                && types[2] == BlockPos.class && types[3] == PlayerEntity.class
+                && types[4] == BlockHitResult.class) {
                 targetMethod = method.getName();
                 break;
             }
@@ -68,6 +88,19 @@ public class AccuratePlacement {
         if (blockActivateMethodName == null) {
             logger.error("Could not find block activate method");
         }
+
+        blockCache = CacheBuilder.newBuilder().maximumSize(256).build(new CacheLoader<>() {
+            @Override
+            public @NotNull Boolean load(@NotNull Block block) {
+                if (blockActivateMethodName == null) return false;
+
+                try {
+                    return !block.getClass().getDeclaredMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, BlockHitResult.class).getDeclaringClass().equals(AbstractBlock.class);
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        });
     }
 
     private final ArrayList<HitResult> backFillList = new ArrayList<>();
@@ -82,12 +115,9 @@ public class AccuratePlacement {
     private static boolean doesItemHaveOverriddenUseMethod(Item item) {
         if (itemUseMethodName == null) return false;
 
-        // TODO cache
-
         try {
-            return !item.getClass().getMethod(itemUseMethodName, World.class, PlayerEntity.class, Hand.class).getDeclaringClass().equals(Item.class);
-        } catch (Exception e) {
-            logger.error("Unable to find item {} use method!", item.getClass().getName(), e);
+            return itemCache.get(item);
+        } catch (ExecutionException e) {
             return false;
         }
     }
@@ -95,12 +125,9 @@ public class AccuratePlacement {
     private static Boolean isBlockActivatable(Block block) {
         if (blockActivateMethodName == null) return false;
 
-        // TODO cache
-
         try {
-            return !block.getClass().getMethod(blockActivateMethodName, BlockState.class, World.class, BlockPos.class, PlayerEntity.class, BlockHitResult.class).getDeclaringClass().equals(AbstractBlock.class);
-        } catch (Exception e) {
-            logger.error("Unable to find block {} activate method!", block.getClass().getName(), e);
+            return blockCache.get(block);
+        } catch (ExecutionException e) {
             return false;
         }
     }
@@ -121,7 +148,7 @@ public class AccuratePlacement {
         MinecraftClient client = MinecraftClient.getInstance();
 
         if (client == null || client.options == null || client.options.useKey == null || client.crosshairTarget == null
-                || client.player == null || client.world == null || client.mouse == null || client.getWindow() == null) {
+            || client.player == null || client.world == null || client.mouse == null || client.getWindow() == null) {
             return;
         }
 
@@ -160,7 +187,7 @@ public class AccuratePlacement {
         Block targetBlock = world.getBlockState(blockHitPos).getBlock();
 
         if (isBlockActivatable(targetBlock) && !(targetBlock instanceof StairsBlock) && !player.isSneaking()
-                || !freshKeyPress && !client.options.useKey.isPressed()) return;
+            || !freshKeyPress && !client.options.useKey.isPressed()) return;
 
         AccurateBlockPlacementMod.disableNormalItemUse = true;
 
@@ -197,12 +224,12 @@ public class AccuratePlacement {
 
         boolean isPlacementTargetFresh =
                 ((this.lastSeenBlockPos == null || !this.lastSeenBlockPos.equals(blockHitPos))
-                        && (this.lastPlacedBlockPos == null || !this.lastPlacedBlockPos.equals(blockHitPos))
+                 && (this.lastPlacedBlockPos == null || !this.lastPlacedBlockPos.equals(blockHitPos))
                 ) || (this.lastPlacedBlockPos != null
-                        && this.lastPlayerPlacedBlockPos != null
-                        && this.lastPlacedBlockPos.equals(blockHitPos)
-                        && Math.abs(facingAxisPlayerLastPos - facingAxisPlayerPos) >= 0.99
-                        && Math.abs(facingAxisPlayerLastPos - facingAxisLastPlacedPos) < Math.abs(facingAxisPlayerPos - facingAxisLastPlacedPos)
+                      && this.lastPlayerPlacedBlockPos != null
+                      && this.lastPlacedBlockPos.equals(blockHitPos)
+                      && Math.abs(facingAxisPlayerLastPos - facingAxisPlayerPos) >= 0.99
+                      && Math.abs(facingAxisPlayerLastPos - facingAxisLastPlacedPos) < Math.abs(facingAxisPlayerPos - facingAxisLastPlacedPos)
                 );
 
         boolean hasMouseMoved = currentMouseRatio != null && this.lastFreshPressMouseRatio != null && this.lastFreshPressMouseRatio.distanceTo(currentMouseRatio) >= 0.1;
@@ -294,13 +321,13 @@ public class AccuratePlacement {
 
     public boolean isPlacementItem(Item currentItem) {
         return (currentItem instanceof BlockItem || currentItem instanceof MiningToolItem)
-                && (!currentItem.getComponents().contains(DataComponentTypes.FOOD) || currentItem instanceof AliasedBlockItem)
-                && !doesItemHaveOverriddenUseMethod(currentItem);
+               && (!currentItem.getComponents().contains(DataComponentTypes.FOOD) || currentItem instanceof AliasedBlockItem)
+               && !doesItemHaveOverriddenUseMethod(currentItem);
     }
 
     private boolean isInteractingWithOtherHand(PlayerEntity player, ItemStack otherHandStack) {
         return !otherHandStack.isEmpty() && (otherHandStack.contains(DataComponentTypes.FOOD)
-                || doesItemHaveOverriddenUseMethod(otherHandStack.getItem())) && player.isUsingItem();
+                                             || doesItemHaveOverriddenUseMethod(otherHandStack.getItem())) && player.isUsingItem();
     }
 
     private boolean isTargetingSomethingElse(MinecraftClient client) {
