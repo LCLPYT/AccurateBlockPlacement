@@ -10,6 +10,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.StairsBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
@@ -158,7 +159,7 @@ public class AccuratePlacement {
     private void tryPlace(MinecraftClient client) {
         AccurateBlockPlacementMod.disableNormalItemUse = false;
 
-        final PlayerEntity player = client.player;
+        final ClientPlayerEntity player = client.player;
         if (player == null) return;
 
         Item currentItem = this.getItemInUse(player);
@@ -169,7 +170,7 @@ public class AccuratePlacement {
             freshKeyPress(client, currentItem);
         }
 
-        if (!isPlacementItem(currentItem) || isTargetingSomethingElse(client)) return;
+        if (!isPlacementItem(currentItem) || isTargetingSomethingElse(client) || player.isUsingItem()) return;
 
         Hand otherHand = this.handOfCurrentItemInUse == Hand.MAIN_HAND ? Hand.OFF_HAND : Hand.MAIN_HAND;
         ItemStack otherHandItemStack = player.getStackInHand(otherHand);
@@ -321,7 +322,6 @@ public class AccuratePlacement {
 
     public boolean isPlacementItem(Item currentItem) {
         return (currentItem instanceof BlockItem || currentItem instanceof MiningToolItem)
-               && (!currentItem.getComponents().contains(DataComponentTypes.FOOD) || currentItem instanceof AliasedBlockItem)
                && !doesItemHaveOverriddenUseMethod(currentItem);
     }
 
